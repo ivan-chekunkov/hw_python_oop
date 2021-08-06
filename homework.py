@@ -5,52 +5,51 @@ class Calculator:
 
     def __init__(self, limit):
         self.limit = limit
-        self.records = list()
+        self.records = []
 
     def add_record(self, rec):
         self.records.append(rec)
 
     def get_today_stats(self):
-        day_summa = 0
+        day_sum = 0
         now = dt.datetime.now().date()
-        for i in self.records:
-            if i.date == now:
-                day_summa += i.amountgi
-        return day_summa
+        for num_record in self.records:
+            if num_record.date == now:
+                day_sum += num_record.amount
+        return day_sum
 
     def get_week_stats(self):
-        week_summa = 0
-        date = dt.datetime.now() - dt.timedelta(weeks=1)
-        for i in self.records:
-            if i.date > date.date() and i.date <= dt.datetime.now().date():
-                week_summa += i.amount
-        return week_summa
+        week_sum = 0
+        date_delta = (dt.datetime.now() - dt.timedelta(weeks=1)).date()
+        date_now = dt.datetime.now().date()
+        for num_record in self.records:
+            date_record = num_record.date
+            if date_record > date_delta and date_record <= date_now:
+                week_sum += num_record.amount
+        return week_sum
 
 
 class Record:
+    FORMAT_DATE = '%d.%m.%Y'
+
     def __init__(self, amount, comment, date=None):
         self.amount = amount
         self.comment = comment
-        self.date = dt.datetime.strptime(
-            date, '%d.%m.%Y').date() if date else dt.datetime.now().date()
+        if date is None:
+            self.date = dt.datetime.now().date()
+        else:
+            self.date = dt.datetime.strptime(date, self.FORMAT_DATE).date()
 
 
 class CaloriesCalculator(Calculator):
-    def __init__(self, limit):
-        super().__init__(limit)
 
     def get_calories_remained(self):
-        cal_day_accumulated = 0
-        now = dt.datetime.now().date()
-        for i in self.records:
-            if i.date == now:
-                cal_day_accumulated += i.amount
+        cal_day_accumulated = self.get_today_stats()
         if cal_day_accumulated < self.limit:
-            return (f'Сегодня можно съесть что-нибудь ещё, '
-                    f'но с общей калорийностью не более '
+            return ('Сегодня можно съесть что-нибудь ещё, '
+                    'но с общей калорийностью не более '
                     f'{self.limit-cal_day_accumulated} кКал')
-        else:
-            return 'Хватит есть!'
+        return 'Хватит есть!'
 
 
 class CashCalculator(Calculator):
@@ -59,21 +58,17 @@ class CashCalculator(Calculator):
     RUB_RATE = 1.00
 
     def get_today_cash_remained(self, currency):
+        sum_day_spent = self.get_today_stats()
+        if sum_day_spent == self.limit:
+            return 'Денег нет, держись'
         all_currency: dict = {
             'rub': (self.RUB_RATE, 'руб'),
             'eur': (self.EURO_RATE, 'Euro'),
             'usd': (self.USD_RATE, 'USD')
         }
-        sum_day_spent = 0
-        now = dt.datetime.now().date()
-        for i in self.records:
-            if i.date == now:
-                sum_day_spent += i.amount
         out = abs((self.limit - sum_day_spent) / all_currency[currency][0])
-        if sum_day_spent == self.limit:
-            return 'Денег нет, держись'
-        elif sum_day_spent < self.limit:
-            return f'На сегодня осталось {out:.2f} {all_currency[currency][1]}'
-        else:
-            return (f'Денег нет, держись: твой долг - {out:.2f} '
-                    f'{all_currency[currency][1]}')
+        currency_type = all_currency[currency][1]
+        if sum_day_spent < self.limit:
+            return f'На сегодня осталось {out:.2f} {currency_type}'
+        return (f'Денег нет, держись: твой долг - {out:.2f} '
+                f'{currency_type}')
