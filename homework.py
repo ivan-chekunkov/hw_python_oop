@@ -47,11 +47,11 @@ class Record:
 class CaloriesCalculator(Calculator):
 
     def get_calories_remained(self):
-        cal_day_accumulated = self.get_today_stats()
-        if cal_day_accumulated < self.limit:
+        cal_day_remained = self.get_cash_remained()
+        if cal_day_remained > 0:
             return ('Сегодня можно съесть что-нибудь ещё, '
                     'но с общей калорийностью не более '
-                    f'{self.get_cash_remained()} кКал')
+                    f'{cal_day_remained} кКал')
         return 'Хватит есть!'
 
 
@@ -61,17 +61,17 @@ class CashCalculator(Calculator):
     RUB_RATE = 1.00
 
     def get_today_cash_remained(self, currency):
-        sum_day_spent = self.get_today_stats()
-        if sum_day_spent == self.limit:
+        sum_day_remained = self.get_cash_remained()
+        if sum_day_remained == 0:
             return 'Денег нет, держись'
         all_currency: dict = {
             'rub': (self.RUB_RATE, 'руб'),
             'eur': (self.EURO_RATE, 'Euro'),
             'usd': (self.USD_RATE, 'USD')
         }
-        out = abs(self.get_cash_remained() / all_currency[currency][0])
+        out = abs(sum_day_remained / all_currency[currency][0])
         currency_type = all_currency[currency][1]
-        if sum_day_spent < self.limit:
+        if sum_day_remained > 0:
             return f'На сегодня осталось {out:.2f} {currency_type}'
         return (f'Денег нет, держись: твой долг - {out:.2f} '
                 f'{currency_type}')
